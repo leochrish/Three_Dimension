@@ -41,54 +41,35 @@ fun Modifier.to3D(
     degree: Float = 0f,
 ) = this.drawBehind {
     val elevationPx = elevation.toPx()
-
-    // Convert degree (where 0 is up) to radians used by standard math
-    // Compose/Standard math uses 0 for right, so we shift -90.
     val radian = (degree - 90f) * (PI / 180f).toFloat()
 
-    // Polar to Cartesian coordinate conversion
     val xOffset = cos(radian) * elevationPx
     val yOffset = sin(radian) * elevationPx
 
-    // Calculate the geometry of the shape based on the composable's size
     val outline = shape.createOutline(size, layoutDirection, this)
 
-    // Pre-create the paint object for performance within the draw scope
     val wallPaint = Paint().apply {
-        paint.applyTo(size, this, 1f) // Applies the brush to the paint
+        paint.applyTo(size, this, 1f)
         isAntiAlias = true
     }
 
     drawIntoCanvas { canvas ->
-        // --- DRAW THE BODY / CONNECTING WALLS ---
-
-        // We iterate drawing the outline N times with increasing offsets
-        // to create smooth connecting walls. This creates a solid geometric volume.
         val steps = elevationPx.roundToInt()
 
-        // Limit steps to prevent extreme rendering costs for huge elevations
         val drawSteps = if (steps < 1) 1 else if (steps > 200) 200 else steps
 
         for (step in 1..drawSteps) {
-            // Calculate the fractional translation for this step
             val fraction = step.toFloat() / drawSteps
             val tx = xOffset * fraction
             val ty = yOffset * fraction
 
             canvas.withSave {
-                // Translate the canvas slightly
                 canvas.translate(tx, ty)
-
-                // Draw the outline using the wall paint.
-                // This repeatedly "smears" the shape across the path, creating the 3D depth.
                 canvas.drawOutline(outline, wallPaint)
             }
         }
     }
 }
-
-
-// --- Usage Examples ---
 
 @Preview(showBackground = true)
 @Composable
@@ -100,16 +81,13 @@ fun Test3DExtrusion() {
             .padding(20.dp),
         contentAlignment = Alignment.Center,
     ) {
-        // Example 1: 3D Text on a box
         val boxShape = RoundedCornerShape(16.dp)
         Box(
             modifier = Modifier
                 .size(width = 160.dp, height = 100.dp)
-                // APPLYING 3D EFFECT
                 .to3D(
                     elevation = 20.dp,
-                    degree = 125f, // Southeast
-                    // Blue-to-DarkBlue Gradient body
+                    degree = 125f,
                     paint = Brush.verticalGradient(listOf(Color(0xFF3366FF), Color(0xFF1133AA))),
                     shape = boxShape
                 )
