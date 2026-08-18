@@ -63,7 +63,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = "io.github.leochrish"
             artifactId = "3D"
-            version = "1.0.0"
+            version = "1.2.0"
 
             afterEvaluate {
                 from(components["release"])
