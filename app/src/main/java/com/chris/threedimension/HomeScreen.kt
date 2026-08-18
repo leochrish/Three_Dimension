@@ -64,7 +64,6 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(40.dp)
     ) {
-        Spacer(modifier = Modifier.height(20.dp))
         
         Text(
             text = "3D Showcase",
