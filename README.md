@@ -17,7 +17,7 @@ Bring your UI to life with a "popped out" look that feels tangible and responds 
 
 ---
 
-<img width="797" height="1770" alt="Screenshot_20260819_012649" src="https://github.com/user-attachments/assets/0bf6ed21-caec-4bd9-8e47-043eddb29804" />
+<img width="514" height="1141" alt="Screenshot_20260819_012649" src="https://github.com/user-attachments/assets/6dec2bf0-72f9-4c76-9c47-c01d47a61bf1" />
 
 
 ## 📦 Installation
