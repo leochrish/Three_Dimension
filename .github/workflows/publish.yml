@@ -33,9 +33,8 @@ jobs:
         run: |
           mkdir -p bundle_root
           # Copy ThreeD artifacts from the staging repo
-          # Assuming the group ID is com.chris.threed, the directory structure starts with 'com'
-          if [ -d "ThreeD/build/staging-repo/com" ]; then
-            cp -r ThreeD/build/staging-repo/com bundle_root/
+          if [ -d "ThreeD/build/staging-repo/io" ]; then
+            cp -r ThreeD/build/staging-repo/io bundle_root/
           fi
           cd bundle_root
           zip -r ../bundle.zip .
