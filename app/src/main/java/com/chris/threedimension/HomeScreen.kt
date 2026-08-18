@@ -21,10 +21,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -44,180 +46,196 @@ import androidx.compose.ui.unit.sp
 import com.chris.threed.rememberAnimatedRgbBrush
 import com.chris.threed.to3D
 
+// Modern Dark Theme Palette
+val BgColor = Color(0xFF0F172A)
+val SurfaceColor = Color(0xFF1E293B)
+val AccentColor = Color(0xFF38BDF8)
+val NeonPurple = Color(0xFFA855F7)
+val NeonPink = Color(0xFFEC4899)
+
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF141A36))
+            .background(BgColor)
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(32.dp)
+        verticalArrangement = Arrangement.spacedBy(40.dp)
     ) {
+        Spacer(modifier = Modifier.height(20.dp))
+        
         Text(
-            text = "3D Compose Samples",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
+            text = "3D Showcase",
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.Black,
+            color = Color.White,
+            letterSpacing = (-1).sp
         )
 
-        // 1. Animated RGB Button
-        SampleThreeDButton(
-            text = "RGB BUTTON",
-            useRgb = true
-        )
+        // 1. Cyberpunk Action Card (Rectangle with sharp corners)
+        CyberpunkCard()
 
-        // 2. Solid Color 3D Card
-        SampleThreeDCard()
+        // 2. Neon Launch Button (Circle with RGB glow)
+        LaunchButton()
 
-        // 3. 3D Icon Buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            SampleThreeDIconButton(Icons.Default.Favorite, Color.Red)
-            SampleThreeDIconButton(Icons.Default.Home, Color(0xFF2196F3))
-            SampleThreeDIconButton(Icons.Default.Settings, Color.Gray)
-        }
+        // 3. Neumorphic Control Pad
+        ControlPad()
 
-        // 4. 3D Profile Image
-        SampleThreeDProfile()
+        // 4. Status Indicator (Asymmetric Squircle)
+        StatusCard()
 
-        Spacer(modifier = Modifier.height(40.dp))
+        Spacer(modifier = Modifier.height(60.dp))
     }
 }
 
 @Composable
-fun SampleThreeDButton(
-    text: String,
-    useRgb: Boolean = false
-) {
+fun CyberpunkCard() {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val elevationState = animateDpAsState(
-        targetValue = if (isPressed) 0.dp else 10.dp,
-        label = "button_elevation"
-    )
+    val elevationState = animateDpAsState(if (isPressed) 2.dp else 14.dp, label = "card")
+    val rgbBrush = rememberAnimatedRgbBrush()
+    val shape = RectangleShape
 
-    val staticPaint = Brush.verticalGradient(listOf(Color(0xFFFF9800), Color(0xFFE65100)))
-    val rgbBrushProvider = if (useRgb) rememberAnimatedRgbBrush() else null
-
-    val shape = RoundedCornerShape(12.dp)
-
-    Box(
-        modifier = Modifier
-            .width(240.dp)
-            .height(60.dp)
-            .to3D(
-                elevation = { elevationState.value },
-                paint = { rgbBrushProvider?.invoke() ?: staticPaint },
-                shape = shape,
-                degree = 45f
-            )
-            .background(if (useRgb) Color(0xFF111111) else Color(0xFFFFB74D), shape)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = { }
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = text,
-            color = Color.White,
-            fontWeight = FontWeight.ExtraBold,
-            letterSpacing = 1.sp
-        )
-    }
-}
-
-@Composable
-fun SampleThreeDCard() {
-    val shape = RoundedCornerShape(20.dp)
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp)
+            .height(180.dp)
             .to3D(
-                elevation = 8.dp,
-                degree = 135f,
-                paint = SolidColor(Color(0xFFBBBBBB)),
-                shape = shape
+                elevation = { elevationState.value },
+                paint = rgbBrush,
+                shape = shape,
+                degree = 135f
             )
-            .background(Color.White, shape)
-            .padding(20.dp)
+            .background(SurfaceColor, shape)
+            .clickable(interactionSource, null) { },
+        contentAlignment = Alignment.Center
     ) {
-        Column {
-            Text(
-                "3D SURFACE",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Default.Bolt,
+                contentDescription = null,
+                tint = AccentColor,
+                modifier = Modifier.size(48.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "This card uses a solid color extrusion to create a clean, physical look.",
-                color = Color.DarkGray
+                "SYSTEM OVERDRIVE",
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                letterSpacing = 2.sp
+            )
+            Text(
+                "TAP TO INITIALIZE",
+                color = AccentColor.copy(alpha = 0.7f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
             )
         }
     }
 }
 
 @Composable
-fun SampleThreeDIconButton(icon: ImageVector, color: Color) {
+fun LaunchButton() {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val elevationState = animateDpAsState(
-        targetValue = if (isPressed) 0.dp else 6.dp,
-        label = "icon_elevation"
-    )
-
-    val shape = RoundedCornerShape(8.dp)
-
-    Box(
-        modifier = Modifier
-            .size(56.dp)
-            .to3D(
-                elevation = { elevationState.value },
-                paint = { SolidColor(color.copy(alpha = 0.7f)) },
-                shape = shape,
-                degree = 45f
-            )
-            .background(Color.White, shape)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = { }
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(icon, contentDescription = null, tint = color)
-    }
-}
-
-@Composable
-fun SampleThreeDProfile() {
+    val elevationState = animateDpAsState(if (isPressed) 0.dp else 20.dp, label = "launch")
+    val rgbBrush = rememberAnimatedRgbBrush()
     val shape = CircleShape
-    val rgbBrushProvider = rememberAnimatedRgbBrush()
-    
+
     Box(
         modifier = Modifier
             .size(120.dp)
             .to3D(
-                elevation = { 12.dp },
-                paint = rgbBrushProvider,
+                elevation = { elevationState.value },
+                paint = rgbBrush,
                 shape = shape,
-                degree = 225f
+                degree = 45f
             )
-            .background(Color.LightGray, shape),
+            .background(Color(0xFF111111), shape)
+            .clickable(interactionSource, null) { },
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            imageVector = Icons.Default.Person,
+            imageVector = Icons.Default.RocketLaunch,
             contentDescription = null,
-            modifier = Modifier.size(60.dp),
-            tint = Color.White
+            tint = Color.White,
+            modifier = Modifier.size(50.dp)
         )
+    }
+}
+
+@Composable
+fun ControlPad() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        PadButton(Icons.Default.PlayArrow, AccentColor)
+        PadButton(Icons.Default.Add, NeonPurple)
+        PadButton(Icons.Default.Done, NeonPink)
+    }
+}
+
+@Composable
+fun PadButton(icon: ImageVector, color: Color) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val elevationState = animateDpAsState(if (isPressed) 2.dp else 10.dp, label = "pad")
+    val shape = RoundedCornerShape(16.dp)
+
+    Box(
+        modifier = Modifier
+            .size(70.dp)
+            .to3D(
+                elevation = { elevationState.value },
+                paint = { SolidColor(color) },
+                shape = shape,
+                degree = 45f
+            )
+            .background(SurfaceColor, shape)
+            .clickable(interactionSource, null) { },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(32.dp))
+    }
+}
+
+@Composable
+fun StatusCard() {
+    val shape = RoundedCornerShape(topStart = 40.dp, bottomEnd = 40.dp) // Asymmetric Squircle
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val elevationState = animateDpAsState(if (isPressed) 4.dp else 12.dp, label = "status")
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp)
+            .to3D(
+                elevation = { elevationState.value },
+                paint = { Brush.horizontalGradient(listOf(NeonPurple, NeonPink)) },
+                shape = shape,
+                degree = 225f
+            )
+            .background(SurfaceColor, shape)
+            .clickable(interactionSource, null) { }
+            .padding(20.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .background(Color.Green, CircleShape)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text("NETWORK STATUS", color = Color.White.copy(alpha = 0.5f), fontSize = 10.sp)
+                Text("OPTIMIZED", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+        }
     }
 }
 
