@@ -1,6 +1,12 @@
 package com.chris.threed
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -16,10 +22,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
@@ -84,6 +92,29 @@ fun Modifier.to3D(
         }
     }
 
+@Composable
+fun rememberAnimatedRgbBrush(): Brush {
+    val infiniteTransition = rememberInfiniteTransition(label = "rgb")
+    val phase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "phase"
+    )
+
+    return Brush.linearGradient(
+        colors = listOf(
+            Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red
+        ),
+        start = Offset(phase, 0f),
+        end = Offset(phase + 500f, 500f),
+        tileMode = TileMode.Repeated
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 fun Test3DExtrusion() {
@@ -102,6 +133,8 @@ fun Test3DExtrusion() {
             label = "elevation"
         )
 
+        val rgbBrush = rememberAnimatedRgbBrush()
+
         val boxShape = RoundedCornerShape(16.dp)
         Box(
             modifier = Modifier
@@ -109,12 +142,10 @@ fun Test3DExtrusion() {
                 .to3D(
                     elevation = elevation,
                     degree = 135f,
-                    paint = Brush.verticalGradient(
-                        listOf(Color(0xFF3366FF), Color(0xFF1133AA))
-                    ),
+                    paint = rgbBrush,
                     shape = boxShape
                 )
-                .background(Color(0xFF66CCFF), boxShape)
+                .background(Color(0xFF222222), boxShape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,

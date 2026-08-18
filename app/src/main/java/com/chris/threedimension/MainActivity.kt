@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.chris.threed.rememberAnimatedRgbBrush
 import com.chris.threed.to3D
 import com.chris.threedimension.ui.theme.ThreeDimensionTheme
 
@@ -63,6 +64,8 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             label = "elevation"
         )
 
+        val rgbBrush = rememberAnimatedRgbBrush()
+
         val boxShape = RoundedCornerShape(16.dp)
         Box(
             modifier = Modifier
@@ -70,12 +73,10 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                 .to3D(
                     elevation = elevation,
                     degree = 135f,
-                    paint = Brush.verticalGradient(
-                        listOf(Color(0xFF3366FF), Color(0xFF1133AA))
-                    ),
+                    paint = rgbBrush,
                     shape = boxShape
                 )
-                .background(Color(0xFF66CCFF), boxShape)
+                .background(Color(0xFF222222), boxShape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
