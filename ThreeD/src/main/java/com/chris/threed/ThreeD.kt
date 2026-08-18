@@ -48,7 +48,14 @@ import kotlin.math.sin
 
 /**
  * Extension modifier to create a 3D extrusion effect with a soft shadow and colored glow.
- * Optimized with [drawWithCache] to minimize per-frame allocations.
+ * Uses lambda providers for elevation and paint to avoid unnecessary recompositions.
+ *
+ * @param elevation A provider for the depth/length of the 3D extrusion.
+ * @param paint A provider for the [Brush] used to paint the 3D body/walls.
+ * @param shape The [Shape] of the UI element.
+ * @param degree The angle (in degrees) to offset the extrusion.
+ * @param shadowColor The color of the main cast shadow.
+ * @param glowAlpha The transparency of the colored glow (halo) around the object (0.0 to 1.0).
  */
 fun Modifier.to3D(
     elevation: () -> Dp,
