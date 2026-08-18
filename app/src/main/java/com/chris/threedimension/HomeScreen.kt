@@ -49,7 +49,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F5))
+            .background(Color(0xFF141A36))
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -59,7 +59,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
             text = "3D Compose Samples",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = Color.Black
+            color = Color.White
         )
 
         // 1. Animated RGB Button
@@ -95,16 +95,13 @@ fun SampleThreeDButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val elevation by animateDpAsState(
+    val elevationState = animateDpAsState(
         targetValue = if (isPressed) 0.dp else 10.dp,
         label = "button_elevation"
     )
 
-    val paint = if (useRgb) {
-        rememberAnimatedRgbBrush()
-    } else {
-        Brush.verticalGradient(listOf(Color(0xFFFF9800), Color(0xFFE65100)))
-    }
+    val staticPaint = Brush.verticalGradient(listOf(Color(0xFFFF9800), Color(0xFFE65100)))
+    val rgbBrushProvider = if (useRgb) rememberAnimatedRgbBrush() else null
 
     val shape = RoundedCornerShape(12.dp)
 
@@ -113,10 +110,10 @@ fun SampleThreeDButton(
             .width(240.dp)
             .height(60.dp)
             .to3D(
-                elevation = elevation,
-                degree = 45f,
-                paint = paint,
-                shape = shape
+                elevation = { elevationState.value },
+                paint = { rgbBrushProvider?.invoke() ?: staticPaint },
+                shape = shape,
+                degree = 45f
             )
             .background(if (useRgb) Color(0xFF111111) else Color(0xFFFFB74D), shape)
             .clickable(
@@ -170,7 +167,7 @@ fun SampleThreeDCard() {
 fun SampleThreeDIconButton(icon: ImageVector, color: Color) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val elevation by animateDpAsState(
+    val elevationState = animateDpAsState(
         targetValue = if (isPressed) 0.dp else 6.dp,
         label = "icon_elevation"
     )
@@ -181,10 +178,10 @@ fun SampleThreeDIconButton(icon: ImageVector, color: Color) {
         modifier = Modifier
             .size(56.dp)
             .to3D(
-                elevation = elevation,
-                degree = 45f,
-                paint = SolidColor(color.copy(alpha = 0.7f)),
-                shape = shape
+                elevation = { elevationState.value },
+                paint = { SolidColor(color.copy(alpha = 0.7f)) },
+                shape = shape,
+                degree = 45f
             )
             .background(Color.White, shape)
             .clickable(
@@ -201,14 +198,16 @@ fun SampleThreeDIconButton(icon: ImageVector, color: Color) {
 @Composable
 fun SampleThreeDProfile() {
     val shape = CircleShape
+    val rgbBrushProvider = rememberAnimatedRgbBrush()
+    
     Box(
         modifier = Modifier
             .size(120.dp)
             .to3D(
-                elevation = 12.dp,
-                degree = 225f,
-                paint = rememberAnimatedRgbBrush(),
-                shape = shape
+                elevation = { 12.dp },
+                paint = rgbBrushProvider,
+                shape = shape,
+                degree = 225f
             )
             .background(Color.LightGray, shape),
         contentAlignment = Alignment.Center
