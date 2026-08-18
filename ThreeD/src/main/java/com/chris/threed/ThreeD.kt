@@ -22,7 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -48,22 +48,15 @@ import kotlin.math.sin
 
 /**
  * Extension modifier to create a 3D extrusion effect with a soft shadow and colored glow.
- * Uses lambda providers for elevation and paint to avoid unnecessary recompositions.
- *
- * @param elevation A provider for the depth/length of the 3D extrusion.
- * @param paint A provider for the [Brush] used to paint the 3D body/walls.
- * @param shape The [Shape] of the UI element.
- * @param degree The angle (in degrees) to offset the extrusion.
- * @param shadowColor The color of the main cast shadow.
- * @param glowAlpha The transparency of the colored glow (halo) around the object (0.0 to 1.0).
+ * Optimized with [drawWithCache] to minimize per-frame allocations.
  */
 fun Modifier.to3D(
     elevation: () -> Dp,
     paint: () -> Brush,
     shape: Shape,
     degree: Float = 0f,
-    shadowColor: Color = Color.Black.copy(alpha = 0.4f),
-    glowAlpha: Float = 0.6f,
+    shadowColor: Color = Color.Black.copy(alpha = 0.5f),
+    glowAlpha: Float = 0.7f,
 ) = this
     .graphicsLayer {
         val elevationPx = elevation().toPx()
@@ -71,88 +64,77 @@ fun Modifier.to3D(
         translationX = cos(radian) * elevationPx
         translationY = sin(radian) * elevationPx
     }
-    .drawBehind {
-        val elevationPx = elevation().toPx()
-        if (elevationPx < 1f) return@drawBehind
-
-        val radian = (degree - 90f) * (PI / 180f).toFloat()
-        val xOffset = cos(radian) * elevationPx
-        val yOffset = sin(radian) * elevationPx
-
+    .drawWithCache {
+        // 1. PRE-CALCULATE GEOMETRY
         val outline = shape.createOutline(size, layoutDirection, this)
-
-        drawIntoCanvas { canvas ->
-            // Helper to get Android Path from Outline
-            fun getAndroidPath(): android.graphics.Path {
-                return when (outline) {
-                    is Outline.Generic -> outline.path.asAndroidPath()
-                    is Outline.Rectangle -> android.graphics.Path().apply {
-                        addRect(
-                            outline.rect.left, outline.rect.top,
-                            outline.rect.right, outline.rect.bottom,
-                            android.graphics.Path.Direction.CW
-                        )
-                    }
-                    is Outline.Rounded -> android.graphics.Path().apply {
-                        val rr = outline.roundRect
-                        addRoundRect(
-                            rr.left, rr.top, rr.right, rr.bottom,
-                            floatArrayOf(
-                                rr.topLeftCornerRadius.x, rr.topLeftCornerRadius.y,
-                                rr.topRightCornerRadius.x, rr.topRightCornerRadius.y,
-                                rr.bottomRightCornerRadius.x, rr.bottomRightCornerRadius.y,
-                                rr.bottomLeftCornerRadius.x, rr.bottomLeftCornerRadius.y
-                            ),
-                            android.graphics.Path.Direction.CW
-                        )
-                    }
-                }
+        val androidPath = when (outline) {
+            is Outline.Generic -> outline.path.asAndroidPath()
+            is Outline.Rectangle -> android.graphics.Path().apply {
+                addRect(outline.rect.left, outline.rect.top, outline.rect.right, outline.rect.bottom, android.graphics.Path.Direction.CW)
             }
-
-            val currentPaint = paint()
-
-            // --- 1. DRAW COLORED GLOW (BLOOM) ---
-            val composeGlowPaint = Paint()
-            currentPaint.applyTo(size, composeGlowPaint, glowAlpha)
-            val androidGlowPaint = composeGlowPaint.asFrameworkPaint().apply {
-                maskFilter = BlurMaskFilter(elevationPx * 2.0f, BlurMaskFilter.Blur.OUTER)
-            }
-            
-            canvas.nativeCanvas.drawPath(getAndroidPath(), androidGlowPaint)
-
-            // --- 2. DRAW MAIN CAST SHADOW ---
-            val shadowPaint = android.graphics.Paint().apply {
-                color = shadowColor.toArgb()
-                isAntiAlias = true
-                setShadowLayer(
-                    elevationPx * 1.8f,
-                    0f, 0f,
-                    shadowColor.toArgb()
+            is Outline.Rounded -> android.graphics.Path().apply {
+                val rr = outline.roundRect
+                addRoundRect(
+                    rr.left, rr.top, rr.right, rr.bottom,
+                    floatArrayOf(
+                        rr.topLeftCornerRadius.x, rr.topLeftCornerRadius.y,
+                        rr.topRightCornerRadius.x, rr.topRightCornerRadius.y,
+                        rr.bottomRightCornerRadius.x, rr.bottomRightCornerRadius.y,
+                        rr.bottomLeftCornerRadius.x, rr.bottomLeftCornerRadius.y
+                    ),
+                    android.graphics.Path.Direction.CW
                 )
             }
+        }
 
-            canvas.withSave {
-                canvas.translate(-xOffset, -yOffset)
-                canvas.nativeCanvas.drawPath(getAndroidPath(), shadowPaint)
-            }
+        // 2. PRE-ALLOCATE PAINTS
+        val wallPaint = Paint().apply { isAntiAlias = true }
+        // Pre-create the Compose wrapper for the glow paint to allow Brush application
+        val composeGlowPaint = Paint().apply { isAntiAlias = true }
+        val androidGlowPaint = composeGlowPaint.asFrameworkPaint().apply {
+            style = android.graphics.Paint.Style.FILL
+        }
+        val shadowPaint = android.graphics.Paint().apply {
+            isAntiAlias = true
+            color = shadowColor.toArgb()
+        }
 
-            // --- 3. DRAW CONNECTING WALLS ---
-            val wallPaint = Paint().apply {
-                currentPaint.applyTo(size, this, 1f)
-                isAntiAlias = true
-            }
+        onDrawBehind {
+            val elevationPx = elevation().toPx()
+            if (elevationPx < 1f) return@onDrawBehind
 
-            val steps = elevationPx.roundToInt()
-            val drawSteps = if (steps < 1) 1 else if (steps > 200) 200 else steps
+            val radian = (degree - 90f) * (PI / 180f).toFloat()
+            val xOffset = cos(radian) * elevationPx
+            val yOffset = sin(radian) * elevationPx
 
-            for (step in 1..drawSteps) {
-                val fraction = step.toFloat() / drawSteps
-                val tx = -xOffset * fraction
-                val ty = -yOffset * fraction
+            drawIntoCanvas { canvas ->
+                // --- 3. DRAW COLORED GLOW (BLOOM) ---
+                // Apply the brush directly to our pre-allocated paint
+                paint().applyTo(size, composeGlowPaint, glowAlpha)
+                androidGlowPaint.maskFilter = BlurMaskFilter(elevationPx * 2.5f, BlurMaskFilter.Blur.OUTER)
+                canvas.nativeCanvas.drawPath(androidPath, androidGlowPaint)
 
+                // --- 4. DRAW MAIN CAST SHADOW (AT BASE) ---
+                shadowPaint.setShadowLayer(elevationPx * 2.0f, 0f, 0f, shadowColor.toArgb())
                 canvas.withSave {
-                    canvas.translate(tx, ty)
-                    canvas.drawOutline(outline, wallPaint)
+                    canvas.translate(-xOffset, -yOffset)
+                    canvas.nativeCanvas.drawPath(androidPath, shadowPaint)
+                }
+
+                // --- 5. DRAW 3D WALLS (OPTIMIZED STEPS) ---
+                paint().applyTo(size, wallPaint, 1f)
+                val stepSize = 3f // px for performance
+                val steps = (elevationPx / stepSize).roundToInt().coerceAtLeast(1)
+                
+                for (i in 1..steps) {
+                    val fraction = i.toFloat() / steps
+                    val tx = -xOffset * fraction
+                    val ty = -yOffset * fraction
+
+                    canvas.withSave {
+                        canvas.translate(tx, ty)
+                        canvas.drawOutline(outline, wallPaint)
+                    }
                 }
             }
         }
@@ -166,8 +148,8 @@ fun Modifier.to3D(
     paint: Brush,
     shape: Shape,
     degree: Float = 0f,
-    shadowColor: Color = Color.Black.copy(alpha = 0.4f),
-    glowAlpha: Float = 0.6f,
+    shadowColor: Color = Color.Black.copy(alpha = 0.5f),
+    glowAlpha: Float = 0.7f,
 ) = to3D(
     elevation = { elevation },
     paint = { paint },
