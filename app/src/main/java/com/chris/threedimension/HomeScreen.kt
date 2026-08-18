@@ -15,17 +15,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.RocketLaunch
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -43,197 +42,205 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.chris.threed.rememberAnimatedRgbBrush
+import com.chris.threed.rememberAnimatedGradientBrush
 import com.chris.threed.to3D
 
-// Modern Dark Theme Palette
-val BgColor = Color(0xFF0F172A)
-val SurfaceColor = Color(0xFF1E293B)
-val AccentColor = Color(0xFF38BDF8)
-val NeonPurple = Color(0xFFA855F7)
-val NeonPink = Color(0xFFEC4899)
+// Professional "Fresh & Neat" Dark Palette
+val Slate900 = Color(0xFF0F172A)
+val Slate800 = Color(0xFF1E293B)
+val AzureLight = Color(0xFF38BDF8)
+val IndigoLight = Color(0xFF818CF8)
+val EmeraldLight = Color(0xFF34D399)
 
 @Composable
 fun HomeScreen(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(BgColor)
+            .background(Slate900)
             .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(40.dp)
+        verticalArrangement = Arrangement.spacedBy(48.dp)
     ) {
+        Spacer(modifier = Modifier.height(20.dp))
         
-        Text(
-            text = "3D Showcase",
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.Black,
-            color = Color.White,
-            letterSpacing = (-1).sp
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = "Three Dimension",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White,
+                letterSpacing = (-1.5).sp
+            )
+            Text(
+                text = "FRESH • NEAT • DYNAMIC",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = AzureLight,
+                letterSpacing = 4.sp
+            )
+        }
 
-        // 1. Cyberpunk Action Card (Rectangle with sharp corners)
-        CyberpunkCard()
+        // 1. Premium Glass-style Feature Card
+        GlassFeatureCard()
 
-        // 2. Neon Launch Button (Circle with RGB glow)
-        LaunchButton()
+        // 2. Neat Action Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            NeatActionButton(Icons.Default.Terminal, EmeraldLight)
+            NeatActionButton(Icons.Default.Fingerprint, AzureLight)
+            NeatActionButton(Icons.Default.AutoAwesome, IndigoLight)
+        }
 
-        // 3. Neumorphic Control Pad
-        ControlPad()
-
-        // 4. Status Indicator (Asymmetric Squircle)
-        StatusCard()
+        // 3. Smooth Flow Card
+        SmoothFlowCard()
 
         Spacer(modifier = Modifier.height(60.dp))
     }
 }
 
 @Composable
-fun CyberpunkCard() {
+fun GlassFeatureCard() {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val elevationState = animateDpAsState(if (isPressed) 2.dp else 14.dp, label = "card")
-    val rgbBrush = rememberAnimatedRgbBrush()
-    val shape = RectangleShape
+    val elevationState = animateDpAsState(if (isPressed) 2.dp else 16.dp, label = "glass")
+    
+    // Azure to Indigo Gradient - Fresh and professional
+    val azureIndigoBrush = rememberAnimatedGradientBrush(
+        colors = listOf(AzureLight, IndigoLight, AzureLight),
+        durationMillis = 4000
+    )
+    
+    val shape = RoundedCornerShape(28.dp)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp)
+            .height(200.dp)
             .to3D(
                 elevation = { elevationState.value },
-                paint = rgbBrush,
+                paint = azureIndigoBrush,
                 shape = shape,
-                degree = 135f
+                degree = 135f,
+                shadowColor = Color.Black.copy(alpha = 0.6f)
             )
-            .background(SurfaceColor, shape)
+            .background(Slate800, shape)
             .clickable(interactionSource, null) { },
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(24.dp)
+        ) {
             Icon(
-                imageVector = Icons.Default.Bolt,
+                imageVector = Icons.Default.Layers,
                 contentDescription = null,
-                tint = AccentColor,
+                tint = AzureLight,
                 modifier = Modifier.size(48.dp)
             )
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
-                "SYSTEM OVERDRIVE",
+                "ADVANCED LAYERING",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp,
-                letterSpacing = 2.sp
+                letterSpacing = 1.sp
             )
             Text(
-                "TAP TO INITIALIZE",
-                color = AccentColor.copy(alpha = 0.7f),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium
+                "Click to explore depth configurations",
+                color = Color.White.copy(alpha = 0.5f),
+                fontSize = 12.sp
             )
         }
     }
 }
 
 @Composable
-fun LaunchButton() {
+fun NeatActionButton(icon: ImageVector, accentColor: Color) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val elevationState = animateDpAsState(if (isPressed) 0.dp else 20.dp, label = "launch")
-    val rgbBrush = rememberAnimatedRgbBrush()
+    val elevationState = animateDpAsState(if (isPressed) 0.dp else 12.dp, label = "neat_btn")
     val shape = CircleShape
 
     Box(
         modifier = Modifier
-            .size(120.dp)
+            .size(80.dp)
             .to3D(
                 elevation = { elevationState.value },
-                paint = rgbBrush,
+                paint = { SolidColor(accentColor.copy(alpha = 0.8f)) },
                 shape = shape,
                 degree = 45f
             )
-            .background(Color(0xFF111111), shape)
+            .background(Slate800, shape)
             .clickable(interactionSource, null) { },
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            imageVector = Icons.Default.RocketLaunch,
+            imageVector = icon,
             contentDescription = null,
             tint = Color.White,
-            modifier = Modifier.size(50.dp)
+            modifier = Modifier.size(32.dp)
         )
     }
 }
 
 @Composable
-fun ControlPad() {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        PadButton(Icons.Default.PlayArrow, AccentColor)
-        PadButton(Icons.Default.Add, NeonPurple)
-        PadButton(Icons.Default.Done, NeonPink)
-    }
-}
-
-@Composable
-fun PadButton(icon: ImageVector, color: Color) {
+fun SmoothFlowCard() {
+    val shape = RoundedCornerShape(topStart = 48.dp, bottomEnd = 48.dp)
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val elevationState = animateDpAsState(if (isPressed) 2.dp else 10.dp, label = "pad")
-    val shape = RoundedCornerShape(16.dp)
-
-    Box(
-        modifier = Modifier
-            .size(70.dp)
-            .to3D(
-                elevation = { elevationState.value },
-                paint = { SolidColor(color) },
-                shape = shape,
-                degree = 45f
-            )
-            .background(SurfaceColor, shape)
-            .clickable(interactionSource, null) { },
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(32.dp))
-    }
-}
-
-@Composable
-fun StatusCard() {
-    val shape = RoundedCornerShape(topStart = 40.dp, bottomEnd = 40.dp) // Asymmetric Squircle
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val elevationState = animateDpAsState(if (isPressed) 4.dp else 12.dp, label = "status")
+    val elevationState = animateDpAsState(if (isPressed) 4.dp else 14.dp, label = "smooth")
+    
+    val auroraBrush = rememberAnimatedGradientBrush(
+        colors = listOf(EmeraldLight, AzureLight, IndigoLight, EmeraldLight),
+        durationMillis = 6000
+    )
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp)
+            .height(120.dp)
             .to3D(
                 elevation = { elevationState.value },
-                paint = { Brush.horizontalGradient(listOf(NeonPurple, NeonPink)) },
+                paint = auroraBrush,
                 shape = shape,
-                degree = 225f
+                degree = 225f,
+                glowAlpha = 0.4f
             )
-            .background(SurfaceColor, shape)
+            .background(Slate800, shape)
             .clickable(interactionSource, null) { }
-            .padding(20.dp),
+            .padding(horizontal = 32.dp),
         contentAlignment = Alignment.CenterStart
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .background(Color.Green, CircleShape)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
             Column {
-                Text("NETWORK STATUS", color = Color.White.copy(alpha = 0.5f), fontSize = 10.sp)
-                Text("OPTIMIZED", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text(
+                    "SMOOTH FLOW",
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    "Status: Optimized",
+                    color = EmeraldLight,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
             }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.3f),
+                modifier = Modifier.size(32.dp)
+            )
         }
     }
 }

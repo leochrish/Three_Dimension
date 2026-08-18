@@ -11,6 +11,7 @@ composeBom = "2026.08.00"
 appcompat = "1.6.1"
 material = "1.10.0"
 foundation = "1.12.0"
+threed = "1.0.0"
 
 [libraries]
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
@@ -37,6 +38,7 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 compose-icons = { group = "androidx.compose.material", name = "material-icons-extended" }
+threed = { module = "io.github.leochrish:3D", version.ref = "threed" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

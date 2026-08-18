@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.asAndroidPath
@@ -37,6 +38,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.withSave
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -48,14 +51,7 @@ import kotlin.math.sin
 
 /**
  * Extension modifier to create a 3D extrusion effect with a soft shadow and colored glow.
- * Uses lambda providers for elevation and paint to avoid unnecessary recompositions.
- *
- * @param elevation A provider for the depth/length of the 3D extrusion.
- * @param paint A provider for the [Brush] used to paint the 3D body/walls.
- * @param shape The [Shape] of the UI element.
- * @param degree The angle (in degrees) to offset the extrusion.
- * @param shadowColor The color of the main cast shadow.
- * @param glowAlpha The transparency of the colored glow (halo) around the object (0.0 to 1.0).
+ * Optimized with [drawWithCache] to minimize per-frame allocations.
  */
 fun Modifier.to3D(
     elevation: () -> Dp,
@@ -96,7 +92,6 @@ fun Modifier.to3D(
 
         // 2. PRE-ALLOCATE PAINTS
         val wallPaint = Paint().apply { isAntiAlias = true }
-        // Pre-create the Compose wrapper for the glow paint to allow Brush application
         val composeGlowPaint = Paint().apply { isAntiAlias = true }
         val androidGlowPaint = composeGlowPaint.asFrameworkPaint().apply {
             style = android.graphics.Paint.Style.FILL
@@ -116,7 +111,6 @@ fun Modifier.to3D(
 
             drawIntoCanvas { canvas ->
                 // --- 3. DRAW COLORED GLOW (BLOOM) ---
-                // Apply the brush directly to our pre-allocated paint
                 paint().applyTo(size, composeGlowPaint, glowAlpha)
                 androidGlowPaint.maskFilter = BlurMaskFilter(elevationPx * 2.5f, BlurMaskFilter.Blur.OUTER)
                 canvas.nativeCanvas.drawPath(androidPath, androidGlowPaint)
@@ -166,38 +160,48 @@ fun Modifier.to3D(
     glowAlpha = glowAlpha
 )
 
+/**
+ * Creates an animated gradient brush provider.
+ */
 @Composable
-fun rememberAnimatedRgbBrush(): () -> Brush {
-    val infiniteTransition = rememberInfiniteTransition(label = "rgb")
+fun rememberAnimatedGradientBrush(
+    colors: List<Color>,
+    durationMillis: Int = 3000
+): () -> Brush {
+    val infiniteTransition = rememberInfiniteTransition(label = "gradient")
     val phaseState = infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 1000f,
         animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = LinearEasing),
+            animation = tween(durationMillis, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "phase"
     )
 
-    return remember(phaseState) {
+    return remember(phaseState, colors) {
         {
             Brush.linearGradient(
-                colors = listOf(
-                    Color.Red.copy(alpha = 0.5f),
-                    Color.Yellow.copy(alpha = 0.5f),
-                    Color.Green.copy(0.5f),
-                    Color.Cyan.copy(alpha = 0.5f),
-                    Color.Blue.copy(alpha = 0.5f),
-                    Color.Magenta.copy(alpha = 0.5f),
-                    Color.Red.copy(alpha = 0.5f)
-                ),
+                colors = colors,
                 start = Offset(phaseState.value, 0f),
-                end = Offset(phaseState.value + 500f, 500f),
+                end = Offset(phaseState.value + 600f, 600f),
                 tileMode = TileMode.Repeated
             )
         }
     }
 }
+
+/**
+ * Legacy RGB brush provider (updated to be a bit more subtle).
+ */
+@Composable
+fun rememberAnimatedRgbBrush(): () -> Brush = rememberAnimatedGradientBrush(
+    colors = listOf(
+        Color(0xFFFF5555), Color(0xFFFFFF55), Color(0xFF55FF55), 
+        Color(0xFF55FFFF), Color(0xFF5555FF), Color(0xFFFF55FF), 
+        Color(0xFFFF5555)
+    ).map { it.copy(alpha = 0.5f) }
+)
 
 @Preview(showBackground = true)
 @Composable
@@ -217,7 +221,9 @@ fun Test3DExtrusion() {
             label = "elevation"
         )
 
-        val rgbBrushProvider = rememberAnimatedRgbBrush()
+        val brushProvider = rememberAnimatedGradientBrush(
+            colors = listOf(Color(0xFF38BDF8), Color(0xFF818CF8), Color(0xFF38BDF8))
+        )
 
         val boxShape = RoundedCornerShape(16.dp)
         Box(
@@ -225,11 +231,11 @@ fun Test3DExtrusion() {
                 .size(width = 200.dp, height = 80.dp)
                 .to3D(
                     elevation = { elevationState.value },
-                    paint = rgbBrushProvider,
+                    paint = brushProvider,
                     shape = boxShape,
                     degree = 135f
                 )
-                .background(Color(0xFF222222), boxShape)
+                .background(Color(0xFF1E293B), boxShape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -238,10 +244,10 @@ fun Test3DExtrusion() {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                if (isPressed) "CLICKED!" else "CLICK ME",
+                if (isPressed) "PRESSED" else "ELEVATED",
                 color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
             )
         }
     }
