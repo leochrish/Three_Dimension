@@ -25,12 +25,16 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.withSave
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -42,18 +46,20 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
- * Extension modifier to create a 3D extrusion effect.
+ * Extension modifier to create a 3D extrusion effect with a soft shadow.
  *
  * @param elevation The depth/length of the 3D extrusion.
- * @param paint The [Brush] (solid color, gradient) used to paint the 3D body/walls.
- * @param shape The [Shape] of the UI element (required to define the extrusion contour).
- * @param degree The angle (in degrees) to offset the extrusion. 0 is North/Up, 90 is East/Right.
+ * @param paint The [Brush] used to paint the 3D body/walls.
+ * @param shape The [Shape] of the UI element.
+ * @param degree The angle (in degrees) to offset the extrusion.
+ * @param shadowColor The color of the shadow.
  */
 fun Modifier.to3D(
     elevation: Dp,
     paint: Brush,
     shape: Shape,
     degree: Float = 0f,
+    shadowColor: Color = Color.Black.copy(alpha = 0.3f),
 ) = this
     .graphicsLayer {
         val elevationPx = elevation.toPx()
@@ -63,19 +69,63 @@ fun Modifier.to3D(
     }
     .drawBehind {
         val elevationPx = elevation.toPx()
-        val radian = (degree - 90f) * (PI / 180f).toFloat()
+        if (elevationPx < 1f) return@drawBehind
 
+        val radian = (degree - 90f) * (PI / 180f).toFloat()
         val xOffset = cos(radian) * elevationPx
         val yOffset = sin(radian) * elevationPx
 
         val outline = shape.createOutline(size, layoutDirection, this)
 
-        val wallPaint = Paint().apply {
-            paint.applyTo(size, this, 1f)
-            isAntiAlias = true
-        }
-
         drawIntoCanvas { canvas ->
+            // --- 1. DRAW SHADOW ---
+            // The shadow is drawn at the base position (before 3D translation)
+            val shadowPaint = android.graphics.Paint().apply {
+                color = shadowColor.toArgb()
+                isAntiAlias = true
+                setShadowLayer(
+                    elevationPx * 1.2f, // shadow blur radius
+                    0f, 0f,             // shadow offset
+                    shadowColor.toArgb()
+                )
+            }
+
+            canvas.withSave {
+                // Move back to origin relative to translated graphicsLayer
+                canvas.translate(-xOffset, -yOffset)
+                
+                val path = when (outline) {
+                    is Outline.Generic -> outline.path.asAndroidPath()
+                    is Outline.Rectangle -> android.graphics.Path().apply {
+                        addRect(
+                            outline.rect.left, outline.rect.top,
+                            outline.rect.right, outline.rect.bottom,
+                            android.graphics.Path.Direction.CW
+                        )
+                    }
+                    is Outline.Rounded -> android.graphics.Path().apply {
+                        val rr = outline.roundRect
+                        addRoundRect(
+                            rr.left, rr.top, rr.right, rr.bottom,
+                            floatArrayOf(
+                                rr.topLeftCornerRadius.x, rr.topLeftCornerRadius.y,
+                                rr.topRightCornerRadius.x, rr.topRightCornerRadius.y,
+                                rr.bottomRightCornerRadius.x, rr.bottomRightCornerRadius.y,
+                                rr.bottomLeftCornerRadius.x, rr.bottomLeftCornerRadius.y
+                            ),
+                            android.graphics.Path.Direction.CW
+                        )
+                    }
+                }
+                canvas.nativeCanvas.drawPath(path, shadowPaint)
+            }
+
+            // --- 2. DRAW CONNECTING WALLS ---
+            val wallPaint = Paint().apply {
+                paint.applyTo(size, this, 1f)
+                isAntiAlias = true
+            }
+
             val steps = elevationPx.roundToInt()
             val drawSteps = if (steps < 1) 1 else if (steps > 200) 200 else steps
 
@@ -107,7 +157,13 @@ fun rememberAnimatedRgbBrush(): Brush {
 
     return Brush.linearGradient(
         colors = listOf(
-            Color.Red, Color.Yellow, Color.Green, Color.Cyan, Color.Blue, Color.Magenta, Color.Red
+            Color.Red.copy(alpha = 0.5f),
+            Color.Yellow.copy(alpha = 0.5f),
+            Color.Green.copy(0.5f),
+            Color.Cyan.copy(alpha = 0.5f),
+            Color.Blue.copy(alpha = 0.5f),
+            Color.Magenta.copy(alpha = 0.5f),
+            Color.Red.copy(alpha = 0.5f)
         ),
         start = Offset(phase, 0f),
         end = Offset(phase + 500f, 500f),
