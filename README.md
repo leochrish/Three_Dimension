@@ -17,6 +17,9 @@ Bring your UI to life with a "popped out" look that feels tangible and responds 
 
 ---
 
+<img width="1080" height="2400" alt="Screenshot_20260819_012649" src="https://github.com/user-attachments/assets/81dae327-4318-4b8a-bdb8-90e7a9301714" />
+
+
 ## 📦 Installation
 
 Add the dependency to your `build.gradle.kts` file:
