@@ -26,7 +26,7 @@ Add the dependency to your `build.gradle.kts` file:
 
 ```kotlin
 dependencies {
-    implementation("io.github.leochrish:3D:1.0.0")
+    implementation("io.github.leochrish:3D:1.2.0")
 }
 ```
 
